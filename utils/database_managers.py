@@ -1,48 +1,53 @@
 # DynamoDB
-import boto3
+from langchain.indexes import SQLRecordManager
+from langchain.indexes import index
+from langchain_community.vectorstores import Qdrant
+from qdrant_client.http.models import Distance, VectorParams
+from qdrant_client import QdrantClient
 import os
 from langchain.docstore.document import Document
 
-AWS_ACCESS_KEY_ID=os.getenv("AWS_ACCESS_KEY_ID")
-AWS_SECRET_ACCESS_KEY=os.getenv("AWS_SECRET_ACCESS_KEY")
+# AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
+# AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
 
-class DynamoDBManager:
-    def __init__(self, region, table_name):
-        self.region = region
-        self.table_name = table_name
-        self.dynamodb = boto3.resource(
-            "dynamodb",
-            aws_access_key_id=AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
-            region_name=region,
-        )
-        self.table = self.dynamodb.Table(table_name)
 
-    def write_item(self, item):
-        try:
-            response = self.table.put_item(Item=item)
-            print("Item added successfully:", response)
-        except Exception as e:
-            print("Error writing item:", e)
-
-    def update_item(self, key, update_expression, expression_values):
-        try:
-            response = self.table.update_item(
-                Key=key,
-                UpdateExpression=update_expression,
-                ExpressionAttributeValues=expression_values,
-            )
-            print("Item updated successfully:", response)
-        except Exception as e:
-            print("Error updating item:", e)
-
-    def get_item(self, key):
-        try:
-            response = self.table.get_item(Key=key)
-            print("Item retrieved successfully:", response)
-            return response
-        except Exception as e:
-            print("Error retrieving item:", e)
+# class DynamoDBManager:
+#    def __init__(self, region, table_name):
+#        self.region = region
+#        self.table_name = table_name
+#        self.dynamodb = boto3.resource(
+#            "dynamodb",
+#            aws_access_key_id=AWS_ACCESS_KEY_ID,
+#            aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+#            region_name=region,
+#        )
+#        self.table = self.dynamodb.Table(table_name)
+#
+#    def write_item(self, item):
+#        try:
+#            response = self.table.put_item(Item=item)
+#            print("Item added successfully:", response)
+#        except Exception as e:
+#            print("Error writing item:", e)
+#
+#    def update_item(self, key, update_expression, expression_values):
+#        try:
+#            response = self.table.update_item(
+#                Key=key,
+#                UpdateExpression=update_expression,
+#                ExpressionAttributeValues=expression_values,
+#            )
+#            print("Item updated successfully:", response)
+#        except Exception as e:
+#            print("Error updating item:", e)
+#
+#    def get_item(self, key):
+#        try:
+#            response = self.table.get_item(Key=key)
+#            print("Item retrieved successfully:", response)
+#            return response
+#        except Exception as e:
+#            print("Error retrieving item:", e)
 
 
 # Chroma vector DB
@@ -122,12 +127,6 @@ class DynamoDBManager:
 
 
 # Qdrant
-import qdrant_client
-from qdrant_client import QdrantClient
-from qdrant_client.http.models import Distance, VectorParams
-from langchain.vectorstores import Qdrant
-from langchain.indexes import index
-from langchain.indexes import SQLRecordManager
 
 
 class QDrantDBManager:
@@ -145,7 +144,7 @@ class QDrantDBManager:
         self.collection_name = collection_name
         self.vector_size = vector_size
         self.embedding = embedding
-        self.client = QdrantClient(url, port=6333, api_key=os.getenv('QDRANT_API_KEY'))
+        self.client = QdrantClient(url, port=6333, api_key=os.getenv("QDRANT_API_KEY"))
         self.record_manager_url = record_manager_url
 
         try:
@@ -195,22 +194,22 @@ class QDrantDBManager:
             cleanup=cleanup,
             source_id_key="source",
         )
-    
+
     def index_documents(self, docs, cleanup="full"):
-        '''
+        """
         Takes splitted Langchain list of documents as input
         Write data on QDrant and hashes on local SQL DB
 
-        When content is mutated (e.g., the source PDF file was revised) there will be a period of time during indexing when both the new and old versions may be returned to the user. 
+        When content is mutated (e.g., the source PDF file was revised) there will be a period of time during indexing when both the new and old versions may be returned to the user.
         This happens after the new content was written, but before the old version was deleted.
 
         * incremental indexing minimizes this period of time as it is able to do clean up continuously, as it writes.
         * full mode does the clean up after all batches have been written.
-        '''
+        """
         index(
             docs,
             self.record_manager,
             self.vector_store,
             cleanup=cleanup,
-            source_id_key="source"
+            source_id_key="source",
         )

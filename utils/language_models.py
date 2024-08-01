@@ -25,11 +25,17 @@ from langchain_community.document_loaders import WebBaseLoader
 # LangChain
 class LangChainAI:
 
-    def __init__(self, model_name="gpt-3.5-turbo-16k", chatbot_model="gpt-3.5-turbo"):
+    def __init__(
+        self,
+        model_name="meta-llama/Meta-Llama-3.1-8B-Instruct",
+        chatbot_model="meta-llama/Meta-Llama-3.1-8B-Instruct",
+    ):
 
         self.chatbot_model = chatbot_model
         self.llm = ChatOpenAI(
-            model_name=model_name, temperature=0.9  # default model
+            model_name=model_name,
+            temperature=0.9,  # default model
+            base_url="http://vllm:8000/v1",
         )  # temperature dictates how whacky the output should be
         self.chains = []
 
@@ -44,7 +50,8 @@ class LangChainAI:
         return docs
 
     def translate_text(self, text):
-        prompt_template = PromptTemplate.from_template("traduci {text} in italiano.")
+        prompt_template = PromptTemplate.from_template(
+            "traduci {text} in italiano.")
         prompt_template.format(text=text)
         llmchain = LLMChain(llm=self.llm, prompt=prompt_template)
         res = llmchain.run(text) + "\n\n"
@@ -282,11 +289,13 @@ class LangChainAI:
         prompt_template = PromptTemplate(
             input_variables=["sentences"], template=template
         )
-        question_chain = LLMChain(llm=self.llm, prompt=prompt_template, verbose=True)
+        question_chain = LLMChain(
+            llm=self.llm, prompt=prompt_template, verbose=True)
 
         # Final Chain
         template = """Puoi sintetizzare questo testo in una lista di bullet points utili per la comprensione rapida del testo? '{text}'"""
-        prompt_template = PromptTemplate(input_variables=["text"], template=template)
+        prompt_template = PromptTemplate(
+            input_variables=["text"], template=template)
         answer_chain = LLMChain(llm=self.llm, prompt=prompt_template)
 
         overall_chain = SimpleSequentialChain(

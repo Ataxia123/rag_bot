@@ -1,6 +1,6 @@
 # anyio==3.6.2
-boto3==1.26.137
-botocore==1.29.137
+#boto3==1.26.137
+#botocore==1.29.137
 click==8.1.3
 #fastapi==0.109.1
 h11==0.14.0
@@ -27,7 +27,7 @@ httptools==0.6.1
 # uvloop
 langchain
 # langchain-experimental
-# langchain-openai==0.0.6
+langchain-openai
 requests==2.31.0
 # trubrics[streamlit]
 
@@ -55,15 +55,15 @@ qdrant-client==1.8.0
 # pytube
 #SpeechRecognition
 # moviepy
-groq
-langchain-groq
+# groq
+# langchain-groq
 # langgraph
 fastembed
 langchain-community 
 langchainhub
 tavily-python
-ollama
-transformers
-torch
+# ollama
+# transformers
+# torch
 telepot
 semantic-router==0.0.20

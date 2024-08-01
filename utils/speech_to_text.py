@@ -5,14 +5,12 @@ import moviepy.editor as mp
 import speech_recognition as sr
 from langchain_community.llms import openai
 
-from utils.aws_services import AWSTranscribe
-from config.environments import OPENAI_API_KEY
 from config.constants import FILE_EXTENSIONS
 
 
 class SpeechToText:
 
-    def __init__(self, model: str, bucket: str = "newsp4-transcribe-docs-bucket"):
+    def __init__(self, model: str):
         # Setup the logger
         self.logger = logging.getLogger(__name__)
         self.logger.propagate = False
@@ -24,11 +22,10 @@ class SpeechToText:
         self.logger.addHandler(handler)
 
         self.model = model
-        self.bucket = bucket
         self.SUPPORTED_MODELS = {
             "whisper-base": "Whisper Base Model (commented out)",
             "transcribe": "AWS Transcribe Model",
-            "gpt-3.5-turbo": "GPT 3.5 Turbo Model",
+            "meta-llama/Meta-Llama-3.1-8B-Instruct": "meta-llama/Meta-Llama-3.1-8B-Instruct",
         }
         self.VIDEO_EXTENSIONS = set(ext for ext in FILE_EXTENSIONS["video"])
         self.AUDIO_EXTENSIONS = set(ext for ext in FILE_EXTENSIONS["audio"])
@@ -43,7 +40,8 @@ class SpeechToText:
             audio.write_audiofile(audio_file)
 
             self.logger.info(
-                f"Video file '{video_file}' converted to audio file '{audio_file}'"
+                f"Video file '{video_file}' converted to audio file '{
+                    audio_file}'"
             )
             return audio_file
 
@@ -68,7 +66,8 @@ class SpeechToText:
                 # IMPORTANT: This will rquire google credentials in json file to be added to environment values
                 text = recognizer.recognize_google_cloud(audio)
                 self.logger.info(
-                    f"Text has been extracted using google cloud from audio file '{audio_file}'"
+                    f"Text has been extracted using google cloud from audio file '{
+                        audio_file}'"
                 )
 
                 # Remove the temporary WAV file if it was created
@@ -85,7 +84,8 @@ class SpeechToText:
 
         except Exception as e:
             self.logger.error(
-                f"Error in speech to text conversion of audio file '{audio_file}'"
+                f"Error in speech to text conversion of audio file '{
+                    audio_file}'"
             )
             raise e
 
@@ -109,7 +109,7 @@ class SpeechToText:
             prompt = "Be precise and rewrite the context and topic in thie video in simple words"
             content = prompt + " " + text
 
-            client = openai.OpenAI(api_key=OPENAI_API_KEY)
+            client = openai.OpenAI(base_url="http://vllm:8000/v1", model=self.model)
 
             # Note: This has been commented out temporarily to test the module
 
@@ -142,7 +142,8 @@ class SpeechToText:
 
             if self.model not in self.SUPPORTED_MODELS:
                 self.logger.error(
-                    f"Model '{self.model}' is not supported. Supported models: {', '.join(self.SUPPORTED_MODELS.keys())}"
+                    f"Model '{self.model}' is not supported. Supported models: {
+                        ', '.join(self.SUPPORTED_MODELS.keys())}"
                 )
                 raise ValueError("Unsupported model")
 
@@ -151,15 +152,7 @@ class SpeechToText:
             #     text = model.transcribe(file_path)
             #     return text['text']
 
-            elif self.model == "transcribe":
-                transcribe = AWSTranscribe(self.bucket, "us-east-1")
-                job_name = transcribe.generate_job_name()
-                text = transcribe.amazon_transcribe(
-                    self.bucket, job_name, file_path, "it-IT"
-                )
-                return text
-
-            elif self.model.startswith("gpt"):
+            elif self.model.startswith("meta"):
                 # if file_path is:
                 # an audio file skip extract_audio
                 # a text skip it to speech_to_text
